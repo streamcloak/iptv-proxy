@@ -559,43 +559,44 @@ func (c *Config) hlsXtreamStream(ctx *gin.Context, oriURL *url.URL) {
 			ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
 			return
 		}
+
 		id := ctx.Param("id")
-		if strings.Contains(location.String(), id) {
-			hlsChannelsRedirectURLLock.Lock()
-			hlsChannelsRedirectURL[id] = *location
-			hlsChannelsRedirectURLLock.Unlock()
+		hlsChannelsRedirectURLLock.Lock()
+		hlsChannelsRedirectURL[id] = *location
+		hlsChannelsRedirectURLLock.Unlock()
 
-			hlsReq, err := http.NewRequest("GET", location.String(), nil)
-			if err != nil {
-				ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
-				return
-			}
-
-			mergeHttpHeader(hlsReq.Header, ctx.Request.Header)
-
-			hlsResp, err := client.Do(hlsReq)
-			if err != nil {
-				ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
-				return
-			}
-			defer hlsResp.Body.Close()
-
-			b, err := ioutil.ReadAll(hlsResp.Body)
-			if err != nil {
-				ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
-				return
-			}
-			body := string(b)
-			body = strings.ReplaceAll(body, "/"+c.XtreamUser.String()+"/"+c.XtreamPassword.String()+"/", "/"+c.User.String()+"/"+c.Password.String()+"/")
-
-			mergeHttpHeader(ctx.Writer.Header(), hlsResp.Header)
-
-			ctx.Data(http.StatusOK, hlsResp.Header.Get("Content-Type"), []byte(body))
+		hlsReq, err := http.NewRequest("GET", location.String(), nil)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
 			return
 		}
-		ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(errors.New("Unable to HLS stream"))) // nolint: errcheck
+
+		mergeHttpHeader(hlsReq.Header, ctx.Request.Header)
+
+		hlsResp, err := client.Do(hlsReq)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
+			return
+		}
+		defer hlsResp.Body.Close()
+
+		contentType := hlsResp.Header.Get("Content-Type")
+
+		b, err := ioutil.ReadAll(hlsResp.Body)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, utils.PrintErrorAndReturn(err)) // nolint: errcheck
+			return
+		}
+
+		body := string(b)
+		body = strings.ReplaceAll(body, "/"+c.XtreamUser.String()+"/"+c.XtreamPassword.String()+"/", "/"+c.User.String()+"/"+c.Password.String()+"/")
+
+		mergeHttpHeader(ctx.Writer.Header(), hlsResp.Header)
+		ctx.Data(http.StatusOK, contentType, []byte(body))
+
 		return
 	}
 
 	ctx.Status(resp.StatusCode)
 }
+
