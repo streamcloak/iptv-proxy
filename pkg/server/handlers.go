@@ -76,6 +76,14 @@ func (c *Config) stream(ctx *gin.Context, oriURL *url.URL) {
 
 	mergeHttpHeader(req.Header, ctx.Request.Header)
 
+	// Force upstream User-Agent
+	forcedUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+		"AppleWebKit/537.36 (KHTML, like Gecko) " +
+		"Chrome/120.0.0.0 Safari/537.36"
+
+	origUA := req.Header.Get("User-Agent")
+	req.Header.Set("User-Agent", forcedUA)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err) // nolint: errcheck
