@@ -79,10 +79,18 @@ func (c *Config) m3uRoutes(r *gin.RouterGroup) {
 			track:       &c.playlist.Tracks[i],
 		}
 
-		if strings.HasSuffix(track.URI, ".m3u8") {
-			r.GET(fmt.Sprintf("/%s/%s/%s/%d/:id", c.endpointAntiColision, c.User, c.Password, i), trackConfig.m3u8ReverseProxy)
-		} else {
-			r.GET(fmt.Sprintf("/%s/%s/%s/%d/%s", c.endpointAntiColision, c.User, c.Password, i, path.Base(track.URI)), trackConfig.reverseProxy)
-		}
+		cleanURI := track.URI
+                if idx := strings.Index(cleanURI, "?"); idx != -1 {
+            		cleanURI = cleanURI[:idx]
+        	}
+		if strings.HasSuffix(cleanURI, ".m3u8") {
+            		r.GET(fmt.Sprintf("/%s/%s/%s/%d/:id", c.endpointAntiColision, c.User, c.Password, i), trackConfig.m3u8ReverseProxy)
+        	} else {
+            		baseName := path.Base(cleanURI)
+			// Safety net: Remove/replace colons in the file name,
+			// as Gin interprets them as wildcards.
+            		baseName = strings.ReplaceAll(baseName, ":", "")
+            		r.GET(fmt.Sprintf("/%s/%s/%s/%d/%s", c.endpointAntiColision, c.User, c.Password, i, baseName), trackConfig.reverseProxy)
+        	}
 	}
 }
