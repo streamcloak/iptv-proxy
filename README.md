@@ -6,7 +6,8 @@ NOTE: This fork of the [original project](https://github.com/pierre-emmanuelJ/ip
 
 - Corrected issue with Xtream Codes EPG not loading
 - Fixed issue with Xtream Codes VOD (Shows & Movies) as the IPTV provider returned data seems to be partially complete, or missing pieces that this proxy is expecting
-
+- Fixed issue with playlist parsing from wrong formatted m3u playlists
+- Fixed issue with streams with colons or unintended file names
 
 
 ## Description
